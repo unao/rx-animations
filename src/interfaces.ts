@@ -12,8 +12,8 @@ export interface ValueBinding<V,O> {
 }
 
 export interface ValueAndMetaInfoBinding<V,O> {
-  (options: O): (source: Observable<V>) => ({
+  (options: O): (source: Observable<V>) => Observable<{
     values: Observable<V>,
     meta: Observable<MetaInfo<V>>
-  })
+  }>
 }
