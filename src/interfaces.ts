@@ -7,13 +7,22 @@ export interface MetaInfo<V> {
   progress?: number
 }
 
+export interface ValueAnimation<V> {
+  (source: Observable<V>): Observable<V>
+}
+
 export interface ValueBinding<V,O> {
-  (options: O): (source: Observable<V>) => Observable<V>
+  (options?: O): ValueAnimation<V>
+}
+
+export interface ValueAndMetaInfoAnimation<V> {
+  (source: Observable<V>): {
+    values: Observable<V>,
+    meta: Observable<MetaInfo<V>>,
+    getMeta: () => MetaInfo<V>
+  }
 }
 
 export interface ValueAndMetaInfoBinding<V,O> {
-  (options: O): (source: Observable<V>) => Observable<{
-    values: Observable<V>,
-    meta: Observable<MetaInfo<V>>
-  }>
+  (options?: O): ValueAndMetaInfoAnimation<V>
 }

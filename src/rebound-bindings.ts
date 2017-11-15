@@ -4,6 +4,7 @@ import { SpringSystem, Spring, SpringConfig, RGB } from 'rebound'
 import { ValueBinding, ValueAndMetaInfoBinding, MetaInfo } from './interfaces'
 
 export interface Config {
+  springSystem?: SpringSystem,
   tension?: number,
   friction?: number,
   restSpeedThreshold?: number,
@@ -11,20 +12,15 @@ export interface Config {
   overshootClamping?: boolean
 }
 
-export interface Options {
-  springSystem?: SpringSystem,
-  config?: Config
-}
-
 const sharedSpringSystem = new SpringSystem()
 const getConfig = (config?: Config): Config =>
   Object.assign(
     {},
     SpringConfig.DEFAULT_ORIGAMI_SPRING_CONFIG,
-    config
+    config || {}
   )
 
-const subjectfromListener = (spring: Spring, callback: string) => {
+const subjectFromListener = (spring: Spring, callback: string) => {
   const s = new Rx.Subject()
   spring.addListener({
     [callback]: () => s.next()
@@ -32,24 +28,24 @@ const subjectfromListener = (spring: Spring, callback: string) => {
   return s
 }
 
-let reboundValue: ValueBinding<number, Options>
-reboundValue = (options: Options) => (stream: Rx.Observable<number>) =>
+let reboundValue: ValueBinding<number, Config>
+reboundValue = (config?: Config) => (stream: Rx.Observable<number>) =>
   Rx.Observable.create(observer => {
-    const springSystem = options.springSystem || sharedSpringSystem
-    const config = getConfig(options.config)
-    const spring = springSystem.createSpring(config.tension, config.friction)
+    const cfg = getConfig(config)
+    const springSystem = (cfg && cfg.springSystem) || sharedSpringSystem
+    const spring = springSystem.createSpring(cfg.tension, cfg.friction)
 
-    if (config.restSpeedThreshold) {
-      spring.setRestSpeedThreshold(config.restSpeedThreshold)
+    if (cfg.restSpeedThreshold) {
+      spring.setRestSpeedThreshold(cfg.restSpeedThreshold)
     }
-    if (config.restDisplacementThreshold) {
-      (spring as any).setRestDisplacementThreshold(config.restDisplacementThreshold)
+    if (cfg.restDisplacementThreshold) {
+      (spring as any).setRestDisplacementThreshold(cfg.restDisplacementThreshold)
     }
 
-    spring.setOvershootClampingEnabled(config.overshootClamping || false)
+    spring.setOvershootClampingEnabled(cfg.overshootClamping || false)
 
-    const update = subjectfromListener(spring, 'onSpringUpdate')
-    const atRest = subjectfromListener(spring, 'onSpringAtRest')
+    const update = subjectFromListener(spring, 'onSpringUpdate')
+    const atRest = subjectFromListener(spring, 'onSpringAtRest')
 
     const first$ = stream
       .take(1)
@@ -68,30 +64,31 @@ reboundValue = (options: Options) => (stream: Rx.Observable<number>) =>
 
     return () => {
       sub.unsubscribe()
-      spring.destroy()
+      // it seems there might some race condition (most likely in rebound lib)
+      setTimeout(() => spring.destroy(), 0)
     }
   })
 
-let reboundValueWithMeta: ValueAndMetaInfoBinding<number, Options>
-reboundValueWithMeta = (options: Options) => (stream: Rx.Observable<number>) => {
+let reboundValueWithMeta: ValueAndMetaInfoBinding<number, Config>
+reboundValueWithMeta = (config?: Config) => (stream: Rx.Observable<number>) => {
   const meta = new Rx.BehaviorSubject<MetaInfo<number>>({ from: NaN, to: NaN, isAnimating: false })
 
   const values = Rx.Observable.create(observer => {
-    const springSystem = options.springSystem || sharedSpringSystem
-    const config = getConfig(options.config)
-    const spring = springSystem.createSpring(config.tension, config.friction)
+    const cfg = getConfig(config)
+    const springSystem = (cfg.springSystem) || sharedSpringSystem
+    const spring = springSystem.createSpring(cfg.tension, cfg.friction)
 
-    if (config.restSpeedThreshold) {
-      spring.setRestSpeedThreshold(config.restSpeedThreshold)
+    if (cfg.restSpeedThreshold) {
+      spring.setRestSpeedThreshold(cfg.restSpeedThreshold)
     }
-    if (config.restDisplacementThreshold) {
-      (spring as any).setRestDisplacementThreshold(config.restDisplacementThreshold)
+    if (cfg.restDisplacementThreshold) {
+      (spring as any).setRestDisplacementThreshold(cfg.restDisplacementThreshold)
     }
 
-    spring.setOvershootClampingEnabled(config.overshootClamping || false)
+    spring.setOvershootClampingEnabled(cfg.overshootClamping || false)
 
-    const update = subjectfromListener(spring, 'onSpringUpdate')
-    const atRest = subjectfromListener(spring, 'onSpringAtRest')
+    const update = subjectFromListener(spring, 'onSpringUpdate')
+    const atRest = subjectFromListener(spring, 'onSpringAtRest')
 
     const first$ = stream
       .take(1)
@@ -114,15 +111,16 @@ reboundValueWithMeta = (options: Options) => (stream: Rx.Observable<number>) => 
 
     return () => {
       sub.unsubscribe()
-      spring.destroy()
       meta.complete()
+      setTimeout(() => spring.destroy(), 0)
     }
   })
 
-  return Rx.Observable.of({
+  return {
     values,
-    meta: meta.asObservable()
-  })
+    meta: meta.asObservable(),
+    getMeta: () => meta.value
+  }
 }
 
 export {
