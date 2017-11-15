@@ -1,8 +1,8 @@
 import { expect } from 'chai'
 
-import { createAnimatedNumber, createAnimatedNumberWithMetaInfo } from './helpers'
+import { createAnimatedNumber, createAnimatedNumberWithMetaInfo, ribbonValue, nextAnimationDone } from './helpers'
 
-import { Observable } from 'rxjs'
+import { Observable, BehaviorSubject } from 'rxjs'
 import { reboundValue, reboundValueWithMeta } from './rebound-bindings'
 
 describe('helpers', () => {
@@ -34,10 +34,7 @@ describe('helpers', () => {
     setTimeout(() => setValue(final), 0)
     return animated
       // .do(x => console.log('ANIMI', x))
-      .takeUntil(meta
-          .skip(2) // initially not animating
-          .filter(m => !m.isAnimating)
-        )
+      .takeUntil(nextAnimationDone(meta))
       .last()
       .subscribe(x => {
         expect(startSubject).to.equal(0)
@@ -45,6 +42,46 @@ describe('helpers', () => {
         expect(x).to.be.above(50)
         expect(final).to.equal(getValue())
         expect(final).to.equal(subject.value)
+        done()
+      })
+  })
+
+  it('ribbonValue lower bound', (done) => {
+    const value = new BehaviorSubject(0)
+    setTimeout(() => value.next(-250), 0)
+    value
+      .let(ribbonValue({ animate: reboundValue(), min: 0, margin: 50, delay: 200 }))
+      .scan((acc: Array<number>, x) => acc.concat([x]), [])
+      .debounceTime(100)
+      .take(1)
+      .subscribe((x) => {
+        expect(x[x.length - 1]).to.equal(0)
+        Observable.from(x)
+          .min()
+          .subscribe(x => {
+            expect(x).to.be.below(-45)
+            expect(x).to.be.above(-50.00001)
+          })
+        done()
+      })
+  })
+
+  it('ribbonValue upper bound', (done) => {
+    const value = new BehaviorSubject(0)
+    setTimeout(() => value.next(250), 0)
+    value
+      .let(ribbonValue({ animate: reboundValue(), max: 100, margin: 50, delay: 200 }))
+      .scan((acc: Array<number>, x) => acc.concat([x]), [])
+      .debounceTime(100)
+      .take(1)
+      .subscribe((x) => {
+        expect(x[x.length - 1]).to.equal(100)
+        Observable.from(x)
+          .max()
+          .subscribe(x => {
+            expect(x).to.be.below(150.0001)
+            expect(x).to.be.above(140)
+          })
         done()
       })
   })

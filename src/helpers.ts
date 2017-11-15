@@ -21,8 +21,16 @@ export interface AnimatedValueAndMetaInfo<V> {
   }
 }
 
+export interface RibbonConfig {
+  animate: ValueAnimation<number>,
+  delay?: number,
+  margin?: number,
+  min?: number,
+  max?: number
+}
+
 // todo figure out how to infere number based on type of initialValue
-let createAnimatedNumber: AnimatedValue<number>
+export let createAnimatedNumber: AnimatedValue<number>
 createAnimatedNumber = (animation, initialValue) => {
   const subject = new BehaviorSubject(initialValue)
   return {
@@ -33,7 +41,7 @@ createAnimatedNumber = (animation, initialValue) => {
   }
 }
 
-let createAnimatedNumberWithMetaInfo: AnimatedValueAndMetaInfo<number>
+export let createAnimatedNumberWithMetaInfo: AnimatedValueAndMetaInfo<number>
 createAnimatedNumberWithMetaInfo = (animation, initialValue) => {
   const subject = new BehaviorSubject(initialValue)
   const m = animation(subject)
@@ -47,7 +55,23 @@ createAnimatedNumberWithMetaInfo = (animation, initialValue) => {
   }
 }
 
-export {
-  createAnimatedNumber,
-  createAnimatedNumberWithMetaInfo
-}
+export const nextAnimationDone = (meta: Observable<MetaInfo<any>>) =>
+  meta
+    .filter(m => m.isAnimating)
+    .switchMapTo(meta
+      .filter(m => !m.isAnimating))
+
+export const ribbonValue = ({ animate, min = -Infinity, max = Infinity, margin = 0, delay = 200 }: RibbonConfig) =>
+  (stream: Observable<number>) =>
+    stream
+      .switchMap(v => {
+        if (v < min) {
+          return Observable.of(Math.max(v, min - margin))
+            .merge(Observable.of(min).delay(delay))
+        } else if (v > max) {
+          return Observable.of(Math.min(v, max + margin))
+            .merge(Observable.of(max).delay(delay))
+        }
+        return Observable.of(v)
+      })
+      .let(animate)
