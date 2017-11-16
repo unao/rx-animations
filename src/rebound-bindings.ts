@@ -4,7 +4,6 @@ import { SpringSystem, Spring, SpringConfig, RGB } from 'rebound'
 import { ValueBinding, ValueAndMetaInfoBinding, MetaInfo } from './interfaces'
 
 export interface Config {
-  springSystem?: SpringSystem,
   tension?: number,
   friction?: number,
   restSpeedThreshold?: number,
@@ -12,11 +11,16 @@ export interface Config {
   overshootClamping?: boolean
 }
 
-const sharedSpringSystem = new SpringSystem()
-const getConfig = (config?: Config): Config =>
+export interface Deps {
+  Rx: typeof Rx,
+  springSystem: SpringSystem,
+  defaultConfig?: Config
+}
+
+const getConfig = (defaultConfig?: Config, config?: Config): Config =>
   Object.assign(
     {},
-    SpringConfig.DEFAULT_ORIGAMI_SPRING_CONFIG,
+    defaultConfig || SpringConfig.DEFAULT_ORIGAMI_SPRING_CONFIG,
     config || {}
   )
 
@@ -28,11 +32,10 @@ const subjectFromListener = (spring: Spring, callback: string) => {
   return s
 }
 
-let reboundValue: ValueBinding<number, Config>
-reboundValue = (config?: Config) => (stream: Rx.Observable<number>) =>
+let reboundValue: (deps: Deps) => ValueBinding<number, Config>
+reboundValue = ({ Rx, springSystem, defaultConfig }) => (config?) => (stream) =>
   Rx.Observable.create(observer => {
-    const cfg = getConfig(config)
-    const springSystem = (cfg && cfg.springSystem) || sharedSpringSystem
+    const cfg = getConfig(defaultConfig, config)
     const spring = springSystem.createSpring(cfg.tension, cfg.friction)
 
     if (cfg.restSpeedThreshold) {
@@ -69,13 +72,12 @@ reboundValue = (config?: Config) => (stream: Rx.Observable<number>) =>
     }
   })
 
-let reboundValueWithMeta: ValueAndMetaInfoBinding<number, Config>
-reboundValueWithMeta = (config?: Config) => (stream: Rx.Observable<number>) => {
+let reboundValueWithMeta: (deps: Deps) => ValueAndMetaInfoBinding<number, Config>
+reboundValueWithMeta = ({ Rx, springSystem, defaultConfig }) => (config?) => (stream) => {
   const meta = new Rx.BehaviorSubject<MetaInfo<number>>({ from: NaN, to: NaN, isAnimating: false })
 
   const values = Rx.Observable.create(observer => {
-    const cfg = getConfig(config)
-    const springSystem = (cfg.springSystem) || sharedSpringSystem
+    const cfg = getConfig(defaultConfig, config)
     const spring = springSystem.createSpring(cfg.tension, cfg.friction)
 
     if (cfg.restSpeedThreshold) {

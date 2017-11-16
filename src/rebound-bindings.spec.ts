@@ -1,9 +1,16 @@
 import { expect } from 'chai'
 
-import { Observable } from 'rxjs'
+import * as Rx from 'rxjs'
+import { SpringSystem } from 'rebound'
+
 import { reboundValue, reboundValueWithMeta } from './rebound-bindings'
 
 describe('rebound-bindings', () => {
+
+  const Observable = Rx.Observable
+  const springSystem = new SpringSystem()
+  const animate = reboundValue({ Rx, springSystem })
+  const animateWithMeta = reboundValueWithMeta({ Rx, springSystem })
 
   it('should animate stream of values', (done) => {
     const startValue = 1000
@@ -17,7 +24,7 @@ describe('rebound-bindings', () => {
     )
 
     stream
-      .let(reboundValue({ restSpeedThreshold: 4, restDisplacementThreshold: 0.5 }))
+      .let(animate({ restSpeedThreshold: 4, restDisplacementThreshold: 0.5 }))
       .scan((acc, v) => {
         acc.push(v)
         return acc
@@ -49,7 +56,7 @@ describe('rebound-bindings', () => {
 
     stream
       .let(s =>
-        Observable.of(reboundValueWithMeta(config)(s)))
+        Observable.of(animateWithMeta(config)(s)))
       .mergeMap(({ values, meta }) =>
         Observable.merge(
           Observable.timer(0).mergeMapTo(values.map(value => ({ value }))),
