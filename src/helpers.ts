@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable } from 'rxjs'
 import { ValueAnimation, ValueAndMetaInfoAnimation, MetaInfo } from './interfaces'
 
 export interface AnimatedValue<V> {
-  (a: ValueAnimation<V>, initialValue: V): {
+  (a: ValueAnimation<V>, initialValue: V, transformFn?: (s: Observable<V>) => Observable<V>): {
     subject: BehaviorSubject<V>,
     animated: Observable<V>,
     getValue: () => V,
@@ -11,7 +11,7 @@ export interface AnimatedValue<V> {
 }
 
 export interface AnimatedValueAndMetaInfo<V> {
-  (a: ValueAndMetaInfoAnimation<V>, initialValue: V): {
+  (a: ValueAndMetaInfoAnimation<V>, initialValue: V, transformFn?: (s: Observable<V>) => Observable<V>): {
     subject: BehaviorSubject<V>,
     animated: Observable<V>,
     meta: Observable<MetaInfo<V>>,
@@ -31,10 +31,11 @@ export interface RibbonConfig {
 
 // todo figure out how to infere number based on type of initialValue
 export let createAnimatedNumber: AnimatedValue<number>
-createAnimatedNumber = (animation, initialValue) => {
+createAnimatedNumber = (animation, initialValue, transformFn) => {
   const subject = new BehaviorSubject(initialValue)
+  const vs = transformFn ? subject.let(transformFn) : subject
   return {
-    animated: subject.let(animation),
+    animated: vs.let(animation),
     subject,
     getValue: () => subject.value,
     setValue: (v: typeof initialValue) => subject.next(v)
@@ -42,9 +43,10 @@ createAnimatedNumber = (animation, initialValue) => {
 }
 
 export let createAnimatedNumberWithMetaInfo: AnimatedValueAndMetaInfo<number>
-createAnimatedNumberWithMetaInfo = (animation, initialValue) => {
+createAnimatedNumberWithMetaInfo = (animation, initialValue, transformFn) => {
   const subject = new BehaviorSubject(initialValue)
-  const m = animation(subject)
+  const vs = transformFn ? subject.let(transformFn) : subject
+  const m = animation(vs)
   return {
     animated: m.values,
     meta: m.meta,
