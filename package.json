@@ -41,6 +41,6 @@
   "scripts": {
     "lint": "tslint --project tsconfig.json src/**/*.ts",
     "test": "karma start",
-    "test-dev": "karma start --auto-watch --no-single-run"
+    "test-watch": "karma start --auto-watch --no-single-run"
   }
 }

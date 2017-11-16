@@ -21,12 +21,15 @@ export interface AnimatedValueAndMetaInfo<V> {
   }
 }
 
-export interface RibbonConfig {
-  animate: ValueAnimation<number>,
+export interface RibbonConfigNotAnimated {
   delay?: number,
   margin?: number,
   min?: number,
   max?: number
+}
+
+export interface RibbonConfig extends RibbonConfigNotAnimated {
+  animate: ValueAnimation<number>,
 }
 
 // todo figure out how to infere number based on type of initialValue
@@ -63,7 +66,7 @@ export const nextAnimationDone = (meta: Observable<MetaInfo<any>>) =>
     .switchMapTo(meta
       .filter(m => !m.isAnimating))
 
-export const ribbonValue = ({ animate, min = -Infinity, max = Infinity, margin = 0, delay = 200 }: RibbonConfig) =>
+export const ribbonValueNotAnimated = ({ min = -Infinity, max = Infinity, margin = 0, delay = 200 }: RibbonConfigNotAnimated) =>
   (stream: Observable<number>) =>
     stream
       .switchMap(v => {
@@ -76,4 +79,9 @@ export const ribbonValue = ({ animate, min = -Infinity, max = Infinity, margin =
         }
         return Observable.of(v)
       })
-      .let(animate)
+
+export const ribbonValue = (c: RibbonConfig) =>
+  (stream: Observable<number>) =>
+    stream
+      .let(ribbonValueNotAnimated(c))
+      .let(c.animate)
