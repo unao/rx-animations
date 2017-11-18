@@ -2,23 +2,24 @@ import { BehaviorSubject, Observable } from 'rxjs'
 import { ValueAnimation, ValueAndMetaInfoAnimation, MetaInfo } from './interfaces'
 
 export interface AnimatedValue<V> {
-  (a: ValueAnimation<V>, initialValue: V, transformFn?: (s: Observable<V>) => Observable<V>): {
-    subject: BehaviorSubject<V>,
-    animated: Observable<V>,
-    getValue: () => V,
-    setValue: (v: V) => void
-  }
+  subject: BehaviorSubject<V>,
+  animated: Observable<V>,
+  getValue: () => V,
+  setValue: (v: V) => void
 }
 
-export interface AnimatedValueAndMetaInfo<V> {
-  (a: ValueAndMetaInfoAnimation<V>, initialValue: V, transformFn?: (s: Observable<V>) => Observable<V>): {
-    subject: BehaviorSubject<V>,
-    animated: Observable<V>,
-    meta: Observable<MetaInfo<V>>,
-    getValue: () => V,
-    setValue: (v: V) => void,
-    getMeta: () => MetaInfo<V>
-  }
+export interface AnimatedValueWithMetaInfo<V> extends AnimatedValue<V> {
+  meta: Observable<MetaInfo<V>>,
+  getMeta: () => MetaInfo<V>
+}
+export interface AnimatedValueCreate<V> {
+  (a: ValueAnimation<V>, initialValue: V, transformFn?: (s: Observable<V>) => Observable<V>):
+    AnimatedValue<V>
+}
+
+export interface AnimatedValueWithMetaInfoCreate<V> {
+  (a: ValueAndMetaInfoAnimation<V>, initialValue: V, transformFn?: (s: Observable<V>) => Observable<V>):
+    AnimatedValueWithMetaInfo<V>
 }
 
 export interface RibbonConfigNotAnimated {
@@ -33,7 +34,7 @@ export interface RibbonConfig extends RibbonConfigNotAnimated {
 }
 
 // todo figure out how to infere number based on type of initialValue
-export let createAnimatedNumber: AnimatedValue<number>
+export let createAnimatedNumber: AnimatedValueCreate<number>
 createAnimatedNumber = (animation, initialValue, transformFn) => {
   const subject = new BehaviorSubject(initialValue)
   const vs = transformFn ? subject.let(transformFn) : subject
@@ -45,7 +46,7 @@ createAnimatedNumber = (animation, initialValue, transformFn) => {
   }
 }
 
-export let createAnimatedNumberWithMetaInfo: AnimatedValueAndMetaInfo<number>
+export let createAnimatedNumberWithMetaInfo: AnimatedValueWithMetaInfoCreate<number>
 createAnimatedNumberWithMetaInfo = (animation, initialValue, transformFn) => {
   const subject = new BehaviorSubject(initialValue)
   const vs = transformFn ? subject.let(transformFn) : subject
