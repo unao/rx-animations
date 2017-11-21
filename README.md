@@ -1,6 +1,12 @@
 [![Build Status](https://travis-ci.org/unao/rx-animations.svg?branch=master)](https://travis-ci.org/unao/rx-animations)
 
+# [Demo](https://rx-animations-demo.firebaseapp.com/)
+
+[WIP]
+
 # Why?
+
+[WIP]
 
 The aim for this library is to create bindings between RxJS and animation libraries.
 On one hand it upgrades animation libraries api to an Observable interface, but 
@@ -50,6 +56,6 @@ Now, the stream stream emission will look something like that:
 // 200 once the animation completed probably after ~300ms
 ```
 
-# LICENSE 
+# License 
 
 [MIT](./LICENSE)

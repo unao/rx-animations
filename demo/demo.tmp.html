@@ -1,0 +1,38 @@
+<html>
+
+<head>
+  <title>Rx-Layout Demo</title>
+</head>
+
+<body>
+  <div style="padding:40px">
+    <h1>Rebound Bindings</h1>
+    <p>Animations done with
+      <a href="https://github.com/facebook/rebound-js">rebound.js</a>.</p>
+    <div class="value-ani" style="padding:40px">
+      <h2>Ribbon Value</h2>
+      <div class="value-content" style="margin-left: 10px;font-size:20px;font-weight:bold"></div>
+      <div>value: -1000 - 1000</div>
+      <input class="value" type="range" value="0" min="-1000" max="1000" />
+      <div>allowed min value: -1000 - 0 (margin: 200, delay: 500ms) </div>
+      <input class="min" type="range" min="-1000" max="0" />
+      <span class="min-content" style="margin-left: 10px"></span>
+      <div>allowed max value: 0 - 1000 (margin: 200, delay: 500ms) </div>
+      <input class="max" type="range" min="0" max="1000" />
+      <span class="max-content" style="margin-left: 10px"></span>
+    </div>
+    <h2>Ribbon Edges</h2>
+    <p>...scroll..</p>
+    <div class="scroll"></div>
+    <!-- <div style="padding:40px">
+      <h2>Value with MetaInfo</h2>
+      <p>Randomly animates a value in the range (-1000, 1000) with meta info</p>
+      <div id="value-meta" style="padding:40px;font-size:20px;font-weight:bold"></div>
+      <pre id="meta">
+
+      </pre>
+    </div>
+  </div> -->
+</body>
+
+</html>
